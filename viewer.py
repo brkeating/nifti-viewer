@@ -1,15 +1,17 @@
 from os import path
 from collections import OrderedDict
 import numpy as np
-import dash
 import plotly.express as px
+import dash
 from dash import html
 from dash_slicer import VolumeSlicer
 import dash_core_components as dcc
 from dash.dependencies import Input, Output
 from hlxpy import io
 from hlxpy.volume import transpose, flip, vol_resample
-import PIL
+
+
+COLORMAP = px.colors.qualitative.D3  # https://plotly.com/python/discrete-color/
 
 
 def load_volume_for_display(uri):
@@ -21,13 +23,13 @@ def load_volume_for_display(uri):
 def load_seg_for_display(uri, ref_vol):
     seg = load_volume_for_display(uri)
     seg = vol_resample(seg, ref_vol, order=0).astype(np.uint8)
-    seg[seg == 3] = 1
     return seg
 
 
 # load data
 vol = load_volume_for_display('data/C3L-00016/t1.nii.gz')
 seg_dict = OrderedDict()
+seg_dict['None'] = np.zeros_like(vol, dtype=np.uint8)
 seg_dict['Consensus'] = load_seg_for_display('data/C3L-00016/tumor-seg-consensus.nii.gz', vol)
 seg_dict['Seibert'] = load_seg_for_display('data/C3L-00016/tumor-seg-seibert.nii.gz', vol)
 seg_dict['Rudie'] = load_seg_for_display('data/C3L-00016/tumor-seg-rudie.nii.gz', vol)
@@ -37,7 +39,7 @@ seg_dict['Ziseen'] = load_seg_for_display('data/C3L-00016/tumor-seg-ziseen.nii.g
 # creeate app + layout
 app = dash.Dash(__name__, update_title=None)
 
-axial_view = VolumeSlicer(app, np.asarray(vol), spacing=vol.voxel_size, axis=2)
+axial_view = VolumeSlicer(app, np.asarray(vol), spacing=vol.voxel_size, axis=0)
 
 seg_checkboxes = dcc.RadioItems(
     id='seg-checkboxes',
@@ -62,14 +64,10 @@ app.layout = html.Div(
 )
 
 
-@app.callback(
-    Output(axial_view.overlay_data.id, 'data'),
-    [Input('seg-checkboxes', 'value')],
-)
-def toggle_overlay(selected_seg_name):
-    colormap = [(255, 255, 0, 50), (255, 0, 0, 100)]
+@app.callback(Output(axial_view.overlay_data.id, 'data'), Input('seg-checkboxes', 'value'))
+def change_overlay(selected_seg_name):
     seg = np.asarray(seg_dict[selected_seg_name])
-    return axial_view.create_overlay_data(seg, colormap)
+    return axial_view.create_overlay_data(seg, COLORMAP)
 
 
 
