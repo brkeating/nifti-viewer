@@ -1,0 +1,9 @@
+data/C3L-00016/flair.nii.gz filter=lfs diff=lfs merge=lfs -text
+data/C3L-00016/t1.nii.gz filter=lfs diff=lfs merge=lfs -text
+data/C3L-00016/tumor-seg-consensus.nii.gz filter=lfs diff=lfs merge=lfs -text
+data/C3L-00016/t1ce.nii.gz filter=lfs diff=lfs merge=lfs -text
+data/C3L-00016/t2.nii.gz filter=lfs diff=lfs merge=lfs -text
+data/C3L-00016/tumor-seg-model-7.nii.gz filter=lfs diff=lfs merge=lfs -text
+data/C3L-00016/tumor-seg-rudie.nii.gz filter=lfs diff=lfs merge=lfs -text
+data/C3L-00016/tumor-seg-seibert.nii.gz filter=lfs diff=lfs merge=lfs -text
+data/C3L-00016/tumor-seg-ziseen.nii.gz filter=lfs diff=lfs merge=lfs -text
