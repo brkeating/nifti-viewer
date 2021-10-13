@@ -27,13 +27,15 @@ def load_seg_for_display(uri, ref_vol):
 
 
 # load data
+case_name = 'C3L-00016'
 vol_dict = OrderedDict()
 vol_dict['T1'] = load_volume_for_display('data/C3L-00016/t1.nii.gz')
 vol_dict['T1ce'] = load_volume_for_display('data/C3L-00016/t1ce.nii.gz')
 # vol_dict['T2'] = load_volume_for_display('data/C3L-00016/t2.nii.gz')
 # vol_dict['FLAIR'] = load_volume_for_display('data/C3L-00016/flair.nii.gz')
 
-ref_vol = vol_dict['T1']
+ref_vol_name = list(vol_dict.keys())[0]
+ref_vol = vol_dict[ref_vol_name]
 seg_dict = OrderedDict()
 seg_dict['None'] = np.zeros_like(ref_vol, dtype=np.uint8)
 seg_dict['Consensus'] = load_seg_for_display('data/C3L-00016/tumor-seg-consensus.nii.gz', ref_vol)
@@ -46,53 +48,66 @@ seg_dict['Consensus'] = load_seg_for_display('data/C3L-00016/tumor-seg-consensus
 
 # creeate app + layout
 app = dash.Dash(__name__, update_title=None)
+app.title = 'Cortechs Image Viewer'
 
-axial_view = VolumeSlicer(app, np.asarray(ref_vol), spacing=ref_vol.voxel_size, axis=0, color='red')
-sagittal_view = VolumeSlicer(app, np.asarray(ref_vol), spacing=ref_vol.voxel_size, axis=1)
-coronal_view = VolumeSlicer(app, np.asarray(ref_vol), spacing=ref_vol.voxel_size, axis=2)
-three_view_layout = html.Div(
-    style={
-        'display': 'grid',
-        'gridTemplateColumns': '33% 33% 33%'
-    },
-    children=[
-        html.Div([axial_view.graph, html.Br(), axial_view.slider, *axial_view.stores], style={'margin': '20px'}),
-        html.Div([sagittal_view.graph, html.Br(), sagittal_view.slider, *sagittal_view.stores], style={'margin': '20px'}),
-        html.Div([coronal_view.graph, html.Br(), coronal_view.slider, *coronal_view.stores], style={'margin': '20px'})
-    ]
-)
-
+# widgets for selecting segmentation overlay
 seg_checkboxes = dcc.RadioItems(
     id='seg-checkboxes',
     options=[{'label': seg_name, 'value': seg_name} for seg_name in seg_dict.keys()],
     value='Consensus',
     style={'display': 'inline'}
 )
+seg_selection_div = html.Div([SEGMENTATION_LABEL+': ', seg_checkboxes], style={'display': 'inline'})
 
+# slice views
+axial_view = VolumeSlicer(app, np.asarray(ref_vol), spacing=ref_vol.voxel_size, axis=0, color='red')
+coronal_view = VolumeSlicer(app, np.asarray(ref_vol), spacing=ref_vol.voxel_size, axis=1)
+sagittal_view = VolumeSlicer(app, np.asarray(ref_vol), spacing=ref_vol.voxel_size, axis=2)
+slice_views = html.Div(
+    style={
+        'display': 'grid',
+        'gridTemplateColumns': '33% 33% 33%'
+    },
+    children=[
+        html.Div([axial_view.graph, html.Br(), axial_view.slider, *axial_view.stores], style={'margin': '0 20px'}),
+        html.Div([sagittal_view.graph, html.Br(), sagittal_view.slider, *sagittal_view.stores], style={'margin': '0 20px'}),
+        html.Div([coronal_view.graph, html.Br(), coronal_view.slider, *coronal_view.stores], style={'margin': '0 20px'})
+    ]
+)
+
+# volume selection
+vol_checkboxes = dcc.RadioItems(
+    id='vol-checkboxes',
+    options=[{'label': vol_name, 'value': vol_name} for vol_name in vol_dict.keys()],
+    value=ref_vol_name,
+    style={'display': 'inline'}
+)
+vol_selection_div = html.Div(['Volume: ', vol_checkboxes], style={'display': 'inline'})
+
+# main layout
 app.layout = html.Div(
     children=[
-        html.Div([SEGMENTATION_LABEL+': ', seg_checkboxes], style={'display': 'inline'}),
-        three_view_layout
+        html.H1(case_name),
+        slice_views,
+        html.Br(),
+        vol_selection_div,
+        html.Br(),
+        html.Br(),
+        seg_selection_div
     ]
 )
 
 
-# callbacks for updating the overlay in each slice view
-
-@app.callback(Output(axial_view.overlay_data.id, 'data'), Input('seg-checkboxes', 'value'))
-def change_axial_overlay(selected_seg_name):
+# callback for updating the overlay in each slice view
+@app.callback(
+    Output(axial_view.overlay_data.id, 'data'),
+    Output(sagittal_view.overlay_data.id, 'data'),
+    Output(coronal_view.overlay_data.id, 'data'),
+    Input('seg-checkboxes', 'value')
+)
+def change_overlay(selected_seg_name):
     seg = np.asarray(seg_dict[selected_seg_name])
-    return axial_view.create_overlay_data(seg, COLORMAP)
-
-@app.callback(Output(sagittal_view.overlay_data.id, 'data'), Input('seg-checkboxes', 'value'))
-def change_sagittal_overlay(selected_seg_name):
-    seg = np.asarray(seg_dict[selected_seg_name])
-    return sagittal_view.create_overlay_data(seg, COLORMAP)
-
-@app.callback(Output(coronal_view.overlay_data.id, 'data'), Input('seg-checkboxes', 'value'))
-def change_coronal_overlay(selected_seg_name):
-    seg = np.asarray(seg_dict[selected_seg_name])
-    return coronal_view.create_overlay_data(seg, COLORMAP)
+    return axial_view.create_overlay_data(seg, COLORMAP), sagittal_view.create_overlay_data(seg, COLORMAP), coronal_view.create_overlay_data(seg, COLORMAP)
 
 
 if __name__ == '__main__':
