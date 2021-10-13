@@ -5,4 +5,6 @@ All of the options that I tried didn't work for me, were buggy, or didn't have e
 TODO:
 * slider for overlay alpha
 * slider(s) for windowing
+* center view on lesion by default
 * option to show 3 views of same image *or* axial views of all slices
+* if the rendering is slow, may want `thumbnail=False` in the `VolumeSlicer` constructors

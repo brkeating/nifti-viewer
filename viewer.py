@@ -60,7 +60,7 @@ seg_checkboxes = dcc.RadioItems(
 seg_selection_div = html.Div([SEGMENTATION_LABEL+': ', seg_checkboxes], style={'display': 'inline'})
 
 # slice views
-axial_view = VolumeSlicer(app, np.asarray(ref_vol), spacing=ref_vol.voxel_size, axis=0, color='red')
+axial_view = VolumeSlicer(app, np.asarray(ref_vol), spacing=ref_vol.voxel_size, axis=0)
 coronal_view = VolumeSlicer(app, np.asarray(ref_vol), spacing=ref_vol.voxel_size, axis=1)
 sagittal_view = VolumeSlicer(app, np.asarray(ref_vol), spacing=ref_vol.voxel_size, axis=2)
 slice_views = html.Div(
@@ -69,9 +69,9 @@ slice_views = html.Div(
         'gridTemplateColumns': '33% 33% 33%'
     },
     children=[
-        html.Div([axial_view.graph, html.Br(), axial_view.slider, *axial_view.stores], style={'margin': '0 20px'}),
-        html.Div([sagittal_view.graph, html.Br(), sagittal_view.slider, *sagittal_view.stores], style={'margin': '0 20px'}),
-        html.Div([coronal_view.graph, html.Br(), coronal_view.slider, *coronal_view.stores], style={'margin': '0 20px'})
+        html.Div([axial_view.graph, html.Br(), axial_view.slider, *axial_view.stores], style={'margin': '0 10px'}),
+        html.Div([sagittal_view.graph, html.Br(), sagittal_view.slider, *sagittal_view.stores], style={'margin': '0 10px'}),
+        html.Div([coronal_view.graph, html.Br(), coronal_view.slider, *coronal_view.stores], style={'margin': '0 10px'})
     ]
 )
 
@@ -98,7 +98,7 @@ app.layout = html.Div(
 )
 
 
-# callback for updating the overlay in each slice view
+# callbacks
 @app.callback(
     Output(axial_view.overlay_data.id, 'data'),
     Output(sagittal_view.overlay_data.id, 'data'),
@@ -108,6 +108,17 @@ app.layout = html.Div(
 def change_overlay(selected_seg_name):
     seg = np.asarray(seg_dict[selected_seg_name])
     return axial_view.create_overlay_data(seg, COLORMAP), sagittal_view.create_overlay_data(seg, COLORMAP), coronal_view.create_overlay_data(seg, COLORMAP)
+
+
+# @app.callback(
+#     Output(axial_view.graph.id, 'data'),
+#     Output(sagittal_view.graph.id, 'data'),
+#     Output(coronal_view.graph.id, 'data'),
+#     Input('vol-checkboxes', 'value')
+# )
+# def change_volume(selected_vol_name):
+#     vol = np.asarray(vol_dict[selected_vol_name])
+#     return vol, vol, vol
 
 
 if __name__ == '__main__':
